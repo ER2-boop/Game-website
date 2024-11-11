@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Avoid Game</title>
+    <style>
+        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #87CEEB; }
+        canvas { border: 2px solid black; background-color: white; }
+        .game-over { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 30px; color: red; display: none; }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+    <div class="game-over" id="gameOverText">GAME OVER! Press R to Restart</div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        canvas.width = 800;
+        canvas.height = 600;
+
+        // Player settings
+        const player = {
+            width: 50,
+            height: 50,
+            x: canvas.width / 2 - 25,
+            y: canvas.height - 60,
+            speed: 5,
+            dx: 0
+        };
+
+        // Obstacles
+        const obstacles = [];
+        const obstacleWidth = 50;
+        const obstacleHeight = 50;
+        const obstacleSpeed = 3;
+        let score = 0;
+
+        let gameOver = false;
+        const gameOverText = document.getElementById('gameOverText');
+
+        // Draw player on canvas
+        function drawPlayer() {
+            ctx.fillStyle = 'green';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+        }
+
+        // Draw obstacles on canvas
+        function drawObstacles() {
+            for (let i = 0; i < obstacles.length; i++) {
+                const obs = obstacles[i];
+                ctx.fillStyle = 'red';
+                ctx.fillRect(obs.x, obs.y, obstacleWidth, obstacleHeight);
+                obs.y += obstacleSpeed;
+
+                // Check for collision with player
+                if (obs.y + obstacleHeight >= player.y &&
+                    obs.x < player.x + player.width &&
+                    obs.x + obstacleWidth > player.x) {
+                    gameOver = true;
+                    gameOverText.style.display = 'block';
+                }
+
+                // Remove obstacles that go off the screen
+                if (obs.y > canvas.height) {
+                    obstacles.splice(i, 1);
+                    score++;
+                }
+            }
+        }
+
+        // Draw the score on the canvas
+        function drawScore() {
+            ctx.font = '20px Arial';
+            ctx.fillStyle = 'black';
+            ctx.fillText('Score: ' + score, 20, 30);
+        }
+
+        // Move player based on key input
+        function movePlayer() {
+            player.x += player.dx;
+
+            // Prevent player from moving out of bounds
+            if (player.x < 0) {
+                player.x = 0;
+            }
+            if (player.x + player.width > canvas.width) {
+                player.x = canvas.width - player.width;
+            }
+        }
+
+        // Generate new obstacles
+        function generateObstacle() {
+            const xPos = Math.random() * (canvas.width - obstacleWidth);
+            obstacles.push({ x: xPos, y: -obstacleHeight });
+        }
+
+        // Update game elements
+        function updateGame() {
+            if (gameOver) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+            drawPlayer();
+            drawObstacles();
+            drawScore();
+            movePlayer();
+
+            if (Math.random() < 0.02) {
+                generateObstacle(); // Generate obstacles at random intervals
+            }
+
+            requestAnimationFrame(updateGame);
+        }
+
+        // Handle key events for player movement
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                player.dx = -player.speed;
+            } else if (e.key === 'ArrowRight') {
+                player.dx = player.speed;
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                player.dx = 0;
+            }
+        });
+
+        // Restart the game after Game Over
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'r' || e.key === 'R') {
+                if (gameOver) {
+                    gameOver = false;
+                    obstacles.length = 0;
+                    score = 0;
+                    player.x = canvas.width / 2 - 25;
+                    gameOverText.style.display = 'none';
+                    updateGame();
+                }
+            }
+        });
+
+        // Start the game
+        updateGame();
+
+    </script>
+</body>
+</html>
